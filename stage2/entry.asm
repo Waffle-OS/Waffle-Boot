@@ -10,9 +10,9 @@ extern puts16
         call    puts16
 %endmacro
 
-[BITS 16]
 
 entry:
+        [BITS 16]
         ; Set up some stuff before calling start
         pop     DX
         and     EDX, 0xFF
@@ -32,7 +32,7 @@ entry:
         cli
         lgdt    [gdt_start.desc]
         mov     EAX, CR0
-        or      EAX, 1
+        or      AL, 1
         mov     CR0, EAX
         jmp     0x08:.pmode
 

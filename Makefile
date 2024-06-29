@@ -24,7 +24,7 @@ $(BUILD_DIR):
 	mkdir $@
 
 run: all
-	qemu-system-x86_64 -hda $(BUILD_DIR)bootloader.bin -d int
+	qemu-system-x86_64 -hda $(BUILD_DIR)bootloader.bin # -d int
 
 clean: 
 	rm -rf $(BUILD_DIR)

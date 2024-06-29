@@ -32,6 +32,8 @@ typedef enum VGA_COLOR
 // Clears the screen to the specified colours
 void vga_clear(VGA_COLOR fg, VGA_COLOR bg);
 
+// Prints a character to VGA
+void vga_putch(char character);
 // Prints out string to VGA
 void vga_puts(char *string);
 // Prints out a decimal number.
