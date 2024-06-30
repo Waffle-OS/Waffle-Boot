@@ -1,7 +1,6 @@
 section .entry
 global entry
-extern start
-extern puts16
+extern main
 
 %define NEWL 13, 10
 
@@ -43,12 +42,41 @@ entry:
         mov     DS, AX
         mov     SS, AX
 
-        call    start
+; Defined in linker script
+extern __bss_start
+extern __bss_end
+        ; Clear BSS - C standard mandates that BSS has been intitialised to 0
+        mov     EDI, __bss_start
+        mov     ECX, __bss_end
+        sub     ECX, EDI
+        xor     AL, AL
+        cld
+        rep     stosb
+
+        call    main
+.halt:
         cli
         hlt
+        jmp     .halt
 
-        jmp     $
+; Other stuff
+
+; ARGS - DS:SI
+; RET - void
+; Only to be used in 16 bit real mode
+puts16:
+        [BITS 16]
+        mov     AH, 0x0E
+        lodsb
+.loop: 
+        int     0x10
+        lodsb
+        test    AL, AL
+        jnz     .loop
+.end:   
+        ret
 
 %include "misc/a20.asm"
 
+section .data
 %include "misc/gdt.asm"
