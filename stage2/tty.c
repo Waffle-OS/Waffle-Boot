@@ -89,7 +89,7 @@ static void hex_to_string(uint32_t number, char converted[9])
 {
 	const char hexnums[] = "0123456789ABCDEF";
 	char buffer[9];
-	int i = 0;
+	size_t i = 0;
 
 	do
 	{
