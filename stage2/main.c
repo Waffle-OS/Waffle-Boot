@@ -1,7 +1,7 @@
 #include "common.h"
 #include "tty.h"
 #include "disk.h"
-
+#include "mmap.h"
 
 void __cdecl main(uint32_t boot_drive) 
 {
@@ -10,27 +10,14 @@ void __cdecl main(uint32_t boot_drive)
     vga_puts("Boot drive: 0x");
     vga_puthex(boot_drive);
 
-    diskAdressPacket_t *dap = 0x500;
-    dap->size = 0x10;
-    dap->reserved = 0;
-    dap->null = 0;
+    mmapPacket_t *mmap = (mmapPacket_t *)0x500;
+    mmapInfo_t *mmap_info = (mmapInfo_t *)0x1000;
 
-    setupDAP(dap, 1, 0x7000, 0, 0, 0);
+    if(_getMmap(mmap, mmap_info))
+        vga_puts("\nFailed to get memory map\n");
+    else
+        vga_puts("\nGot memory map\n");
 
-
-    if(_readDiskLBA(&dap, boot_drive))
-        return;
-
-    const uint8_t* data = (uint8_t*)0x7000;
-    const uint8_t* boot = (uint8_t*)0x7C00;
-
-    for(int i = 0; i < 512; i++)
-    {
-        if(data[i] != boot[i])
-            return;
-    }
-
-    vga_puts("successful read");
-
+    vga_puthex(mmap_info->size);
     return;
 }

@@ -41,6 +41,10 @@ entry:
         mov     AX, 0x10
         mov     DS, AX
         mov     SS, AX
+        xor     AX, AX
+        mov     ES, AX
+        mov     FS, AX
+        mov     GS, AX
 
 ; Defined in linker script
 extern __bss_start
