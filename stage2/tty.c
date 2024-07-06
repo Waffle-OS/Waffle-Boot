@@ -1,115 +1,94 @@
+#include <stdarg.h>
 #include "tty.h"
+ 
 
-size_t terminal_row;
-size_t terminal_column;
-uint8_t terminal_color;
-uint16_t *tty_buffer = (uint16_t *)0xB8000;
+static size_t vga_row = 0;
+static size_t vga_column = 0;
+static const uint16_t vga_colour = 0x0F00; // Black bg and white fg
+static uint16_t *vga_buffer = (uint16_t *)0xB8000;
 
-static inline uint8_t vga_color_entry(VGA_COLOR fg, VGA_COLOR bg)
+// Clears the screen
+void vga_clear(void)
 {
-    return (fg | bg << 4);
+    size_t pos;
+
+    for(pos = 0; pos < VGA_SIZE; pos++)
+        vga_buffer[pos] = ' ' | vga_colour;
+        
+    vga_row = 0;
+    vga_column = 0;
 }
 
-static inline uint16_t vga_entry(char character, uint8_t color_entry)
+// Scrolls the VGA text mode buffer
+static void vga_scroll(void)
 {
-    return (uint16_t) character | (uint16_t) color_entry << 8;
-}
+    size_t i;
 
-// Clears the screen to the specified colours
-void vga_clear(VGA_COLOR fg, VGA_COLOR bg)
-{  
-    terminal_row = 0;
-	terminal_column = 0;
-	terminal_color = vga_color_entry(fg, bg);
-	for (size_t y = 0; y < VGA_HEIGHT; y++) 
-    {
-		for (size_t x = 0; x < VGA_WIDTH; x++) 
-        {
-			const size_t index = (y * VGA_WIDTH) + x;
-			tty_buffer[index] = vga_entry(' ', terminal_color);
-		}
-	}
-}
-
-// Scrolls the terminal down
-void terminal_scroll(void)
-{
-	for(int i = VGA_WIDTH; i < (VGA_WIDTH*VGA_HEIGHT); i++)
+    for(i = VGA_WIDTH; i < VGA_SIZE; i++)
 	{
-		tty_buffer[i-VGA_WIDTH] = tty_buffer[i];
-		tty_buffer[i] = vga_entry(' ', terminal_color);
+		vga_buffer[i-VGA_WIDTH] = vga_buffer[i];
+        vga_buffer[i] |= ' ';
 	}
-	terminal_row--;
+	vga_row--;
 }
 
 // Writes a character to VGA
-static void vga_writech(char character)
+void vga_writec(const char character)
 {
-    const size_t index = (terminal_row * VGA_WIDTH) + terminal_column;
-
-	switch (character)
-	{
-        case '\n':
-            if (++terminal_row == VGA_HEIGHT)
-                terminal_scroll();
-            terminal_column = 0;
-            return;
-        default:
-            tty_buffer[index] = vga_entry(character, terminal_color);
-	}
-
-	if (++terminal_column == VGA_WIDTH) 
+    const size_t vga_index = vga_row * VGA_WIDTH + vga_column;
+    switch(character)
     {
-		terminal_column = 0;
-		if (++terminal_row == VGA_HEIGHT)
-		{
-			terminal_scroll();
-			terminal_row -= 2;
-		}
-	}
+        case '\n':
+            vga_column = 0;
+            vga_row++;
+            break;
+        case '\t':
+            vga_column += 4 - (vga_column % 4);
+            break;
+
+        default:
+            vga_buffer[vga_index] = character | vga_colour;
+            vga_column++;
+    }
+
+    if(vga_column >= VGA_WIDTH)
+    {
+        vga_column = 0;
+        vga_row++;
+    }
+    if(vga_row == VGA_HEIGHT)
+        vga_scroll();
 }
 
-// Prints a character to VGA
-void vga_putch(char character)
+// Writes a string to VGA
+void vga_writes(const char *string)
 {
-	vga_writech(character);
+    size_t i;
+
+    for(i = 0; string[i]; i++)
+    {
+        vga_writec(string[i]);
+    }
 }
 
 // Prints a string to VGA
-void vga_puts(char *string)
+void vga_puts(const char *string)
 {
-	for(size_t i = 0; string[i]; i++)
-	{
-		vga_writech(string[i]);
-	}
+    vga_writes(string);
+    vga_setcurpos(vga_column, vga_row);
 }
 
-// Converts a hexadecimal number to a string
-static void hex_to_string(uint32_t number, char converted[9])
+// Gets the current position
+void vga_getpos(uint16_t *x, uint16_t *y)
 {
-	const char hexnums[] = "0123456789ABCDEF";
-	char buffer[9];
-	size_t i = 0;
-
-	do
-	{
-		buffer[i] = hexnums[number & 0xF];
-		i++;
-		number /= 16;
-	} while (number);
-
-	for(int j = i - 1; j >= 0; j--)
-	{
-		converted[i - 1 - j] = buffer[j];
-	}
-
-	converted[i] = '\0';
+    *x = vga_column;
+    *y = vga_row;
 }
 
-// Prints a hexadecimal number to VGA.
-void vga_puthex(uint32_t number)
+// Sets the position
+void vga_setpos(const uint16_t x, const uint16_t y)
 {
-    char converted[9];
-    hex_to_string(number, converted);
-    vga_puts(converted);
+    vga_column = x;
+    vga_row = y;
+    vga_setcurpos(x, y);
 }

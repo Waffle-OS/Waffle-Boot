@@ -17,7 +17,7 @@ OBJECTS := ${OBJECTS_C} ${OBJECTS_ASM}
 C_FLAGS ?= -O3
 # Mandatory flags
 C_FLAGS := ${C_FLAGS} -m32 -ffreestanding -Wall \
-		-Wextra -nostdlib -fno-PIC
+		-Wextra -nostdlib -fno-PIC -Iinclude
 
 .PHONY: all clean
 all: stage2
