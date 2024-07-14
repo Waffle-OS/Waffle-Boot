@@ -12,10 +12,7 @@ extern main
 
 entry:
         [BITS 16]
-        ; Set up some stuff before calling start
-        pop     DX
-        and     EDX, 0xFF
-        push    EDX
+        
 .a20_line:
         ; Enable A20 line
         call    enable_a20
@@ -37,10 +34,11 @@ entry:
 
 .pmode:
         [BITS 32]
-
+        ; Initialise segments
         mov     AX, 0x10
         mov     DS, AX
         mov     SS, AX
+        ; Extra segments should be zero
         xor     AX, AX
         mov     ES, AX
         mov     FS, AX
@@ -59,26 +57,14 @@ extern __bss_end
 
         call    main
 .halt:
+        ; Halt on return
         cli
         hlt
         jmp     .halt
 
 ; Other stuff
 
-; ARGS - DS:SI
-; RET - void
-; Only to be used in 16 bit real mode
-puts16:
-        [BITS 16]
-        mov     AH, 0x0E
-        lodsb
-.loop: 
-        int     0x10
-        lodsb
-        test    AL, AL
-        jnz     .loop
-.end:   
-        ret
+%include "misc/puts.asm"
 
 %include "misc/a20.asm"
 

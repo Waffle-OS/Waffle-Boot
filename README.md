@@ -2,8 +2,8 @@
 The default bootloader used by Waffle-OS.
 
 TODO:
-- Get memory map
-- Load kernel
+- ~~Get memory map~~
+- Load kernel from the file system
 - Set up page table to load kernel in higher half
 - Get video modes via VBE
 - Add loading of ELF files (may do this much later on)

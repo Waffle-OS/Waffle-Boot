@@ -1,21 +1,35 @@
 #pragma once
-#include "common.h"
 
-typedef struct __attribute__((packed)) diskAdressPacket
+#include "stage2.h"
+
+/* Types */
+typedef struct _DiskAdressPacket DiskAddressPacket;
+
+/* Structs */
+/**
+ * @brief Disk address packet, used by the BIOS to read from the disk.
+ * 
+ */
+struct __packed _DiskAdressPacket
 {
-    uint8_t size;
-    uint8_t reserved; // Set to 0
-    uint16_t blocks;
-    uint16_t offset;
-    uint16_t segment; 
-    uint32_t low_address;
-    uint16_t high_address; // Not really useful here
-    uint16_t null; // Set to 0
-} diskAdressPacket_t;
+    uint8_t     dapSize;
+    uint8_t     unused;
+    uint16_t    blocks;
+    uint16_t    offset;
+    uint16_t    segment; 
+    uint32_t    lbaLow;
+    uint32_t    lbaHigh;
+};
 
-void setupDAP(diskAdressPacket_t *dap, uint32_t blocks, 
-            uint32_t offset, uint32_t segment, 
-            uint32_t low_address, uint16_t high_address);
+/* Functions */
+/**
+ * @brief Reads from the disk using LBA addressing.
+ * 
+ * @param dap The disk address packet to use.
+ * @param drive The drive of the disk to read from.
+ * @return 
+ */
+uint32_t __cdecl    _readDiskLBA(DiskAddressPacket *dap, 
+                                 uint32_t drive);
+                                
 
-// Returns 0 on success
-uint8_t __cdecl _readDiskLBA(diskAdressPacket_t *dap, uint32_t drive);

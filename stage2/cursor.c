@@ -1,7 +1,8 @@
-#include "tty.h"
+#include "stage2.h"
 
-static bool cursorOn = true;
+/* IO FUNCTIONS */
 
+// Reads a byte from port
 static inline uint8_t inb(uint16_t port)
 {
     uint8_t ret;
@@ -12,7 +13,9 @@ static inline uint8_t inb(uint16_t port)
     return ret;
 }
 
-static inline void outb(uint16_t port, uint8_t val)
+// Outputs byte to port
+static inline void outb(uint16_t port, 
+                        uint8_t val)
 {
     __asm__ volatile ( "outb %b0, %w1" 
                     : 
@@ -20,15 +23,15 @@ static inline void outb(uint16_t port, uint8_t val)
                     : "memory");
 }
 
+
+/* EVERYTHING ELSE*/
+
+static bool cursorOn = true;
+static VgaPosition cursorPos = 0;
+
 // Sets cursor postion
-void vga_setcurpos(const uint16_t x,
-                const uint16_t y)
+static void _setCurPos(const VgaPosition pos)
 {
-    if(!cursorOn)
-        return;
-
-    const uint16_t pos = y * VGA_WIDTH + x;
-
     outb(0x3D4, 0x0F);
     outb(0x3D5, 
         (uint8_t)(pos & 0xFF));
@@ -37,22 +40,51 @@ void vga_setcurpos(const uint16_t x,
         (uint8_t)((pos >> 8) & 0xFF));
 }
 
+// Sets cursor postion
+void vgaSetPos(const VgaPosition pos)
+{
+    cursorPos = pos;
+
+}
+
+// Gets the current cursor position
+VgaPosition vgaGetPos()
+{
+    return cursorPos;
+}
+
+void vgaUpdateCur(void)
+{
+    if(cursorOn)
+        _setCurPos(cursorPos);
+}
+
+
 // Shows the cursor and sets the start and end scanlines
-void vga_showcur(const uint8_t start, 
-                    const uint8_t end)
+void vgaShowCur(const uint8_t start, 
+                const uint8_t end)
 {
     outb(0x3D4, 0x0A);
     outb(0x3D5, 
-        (inb(0x3D5) & 0xC0) | start);   // Set the first scanline to draw the cursor at
+         (inb(0x3D5) & 0xC0) | start);  // Set the first scanline to draw the cursor at
 
     outb(0x3D4, 0x0B);
     outb(0x3D5, 
-        (inb(0x3D5) & 0xE0) | end);    // Set the last scanline to draw the cursor at
+         (inb(0x3D5) & 0xE0) | end);    // Set the last scanline to draw the cursor at
+    
+    // Cursor is now on
+    cursorOn = true;
 }
 
 // Hides the cursor
-void vga_hidecur(void)
+void vgaHideCur(void)
 {
+    if(!cursorOn)
+        return;
+
     outb(0x3D4, 0x0A);
     outb(0x3D5, 0x20);
+
+    // Cursor is now off
+    cursorOn = false;
 }

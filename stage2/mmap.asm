@@ -58,18 +58,18 @@ _getMmap:
         jmp    .loop
 
 .error:
-        mov     EAX, 1
+        ; Memory map size of 0
+        xor     EAX, EAX
         jmp     .end
 .finish:
-        xor     EAX, EAX
+        ; Return number of memory map entries
+        mov     EAX, EDI
+        sub     EAX, [EBP+8]
+        shr     EAX, 4
+        sub     EAX, 1
 .end:
         enter_pmode
-
-        mov     [ESI], EDI
-        mov     ECX, [EBP+8]
-        sub     [ESI], ECX
-        shr     dword [ESI], 4
-        sub     dword [ESI], 1
+        
         ; Restore registers
         pop EBX
         pop EDI
